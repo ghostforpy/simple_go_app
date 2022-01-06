@@ -27,9 +27,9 @@ services:
   db:
     image: postgres:12
     volumes:
-      - ./scripts:/scripts
+      #- ./scripts:/scripts
       - app-db-data:/var/lib/postgresql/data/pgdata
-      - ./backups_db:/backups
+      #- ./backups_db:/backups
     env_file:
       - .env
     environment:

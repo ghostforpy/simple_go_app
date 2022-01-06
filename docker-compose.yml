@@ -27,15 +27,17 @@ services:
   db:
     image: postgres:12
     volumes:
-      - ./scripts:/scripts
+      #- ./scripts:/scripts
       - app-db-data:/var/lib/postgresql/data/pgdata
-      - ./backups_db:/backups
-    #ports:
-    #  - "5432:5432"
+      #- ./backups_db:/backups
+    ports:
+      - "5432:5432"
     env_file:
       - .env
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
+    networks:
+      - main-net
 
   pgadmin:
     image: dpage/pgadmin4
@@ -47,6 +49,8 @@ services:
       - .env
     volumes:
       - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - main-net
   
   backend:
     env_file:
@@ -55,6 +59,8 @@ services:
       - "4000:4000"
     depends_on:
       - db
+    networks:
+      - main-net
     build:
       context: .
       dockerfile: ./compose/backend/Dockerfile
@@ -66,4 +72,7 @@ services:
 volumes:
   app-db-data:
   pgadmin-data:
+
+networks:
+  main-net:
 

@@ -1,0 +1,24 @@
+version: "3.3"
+services:
+
+  migrate:
+    image: migrate/migrate
+    env_file:
+      - .env
+    networks:
+      - simple_go_app_main-net
+    volumes:
+      - ./migrations:/migrations:z
+    # for up migrations
+    command: ["-path", "/migrations", "-database",  "postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_SERVER:$POSTGRES_PORT/$POSTGRES_DB?sslmode=disable", "up"]
+    # for down 1 migration
+    #command: ["-path", "/migrations", "-database",  "postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_SERVER:$POSTGRES_PORT/$POSTGRES_DB?sslmode=disable", "down", "1"]
+    # for init migrations
+    #command: ["create", "-ext", "sql", "-dir", "/migrations", "-seq", "init_schema_users"]
+
+
+networks:
+  simple_go_app_main-net:
+    external: true
+    
+
