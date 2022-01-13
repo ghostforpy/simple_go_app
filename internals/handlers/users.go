@@ -9,8 +9,10 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/ghostforpy/simple_go_app/internals/crud"
+	"github.com/ghostforpy/simple_go_app/internals/dto"
 	"github.com/ghostforpy/simple_go_app/internals/models"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
@@ -20,6 +22,7 @@ import (
 type UsersHandler struct {
 	conn *bun.DB
 	ctx  context.Context
+	crud crud.UserRepo
 }
 type IError struct {
 	Field string
@@ -28,7 +31,7 @@ type IError struct {
 }
 
 func NewUsersHandler(conn *bun.DB, ctx context.Context) *UsersHandler {
-	return &UsersHandler{conn: conn, ctx: ctx}
+	return &UsersHandler{conn: conn, ctx: ctx, crud: crud.NewUsersCrud(conn, ctx)}
 }
 
 func GetQueryInt(q url.Values, s string) (int, error) {
@@ -48,7 +51,7 @@ func (h *UsersHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Метод не дозволен", http.StatusMethodNotAllowed)
 		return
 	}
-	var users []models.User
+	var users []dto.User
 	var limit, offset int
 	var err error
 	queries := r.URL.Query()
@@ -59,8 +62,7 @@ func (h *UsersHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	if offset, err = GetQueryInt(queries, "offset"); err != nil || offset <= 0 {
 		offset = 0
 	}
-	c := crud.NewUsersCrud(h.conn, h.ctx)
-	users, err = c.List(limit, offset)
+	users, err = h.crud.List(limit, offset)
 	if err == nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -96,7 +98,7 @@ func (h *UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		var errors []*IError
 		for _, err := range err.(validator.ValidationErrors) {
 			var el IError
-			el.Field = err.Field()
+			el.Field = strings.ToLower(err.Field())
 			el.Tag = err.Tag()
 			el.Value = err.Param()
 			errors = append(errors, &el)
@@ -106,8 +108,7 @@ func (h *UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(errors)
 		return
 	}
-	c := crud.NewUsersCrud(h.conn, h.ctx)
-	if user, err := c.Create(user); err != nil {
+	if user, err := h.crud.Create(user); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Println(err)
 		return
@@ -126,8 +127,7 @@ func (h *UsersHandler) RetrivieUser(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	c := crud.NewUsersCrud(h.conn, h.ctx)
-	user, err := c.Retrivie(int64(id))
+	user, err := h.crud.Retrivie(int64(id))
 	if err == nil {
 		data, err := json.Marshal(user)
 		if err != nil {
@@ -157,8 +157,7 @@ func (h *UsersHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	c := crud.NewUsersCrud(h.conn, h.ctx)
-	user, err := c.Update(int64(id), reqBody)
+	user, err := h.crud.Update(int64(id), reqBody)
 	if err == nil {
 		user.Password = "" // Don't encode password
 		if data, err := json.Marshal(user); err == nil {
@@ -178,8 +177,7 @@ func (h *UsersHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	c := crud.NewUsersCrud(h.conn, h.ctx)
-	res, err := c.Delete(int64(id))
+	res, err := h.crud.Delete(int64(id))
 	if err == nil {
 		if res {
 			w.WriteHeader(http.StatusNoContent)

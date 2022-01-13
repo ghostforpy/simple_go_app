@@ -8,12 +8,21 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/ghostforpy/simple_go_app/internals/dto"
 	"github.com/ghostforpy/simple_go_app/internals/models"
 
 	"github.com/uptrace/bun"
 	//"github.com/uptrace/bun/dialect/pgdialect"
 	//"github.com/uptrace/bun/driver/pgdriver"
 )
+
+type UserRepo interface {
+	List(limit, offset int) ([]dto.User, error)
+	Create(user *models.User) (*models.User, error)
+	Retrivie(id int64) (*models.User, error)
+	Update(id int64, reqBody []byte) (*models.User, error)
+	Delete(id int64) (bool, error)
+}
 
 type UsersCrud struct {
 	conn *bun.DB
@@ -23,7 +32,7 @@ type UsersCrud struct {
 func NewUsersCrud(conn *bun.DB, ctx context.Context) *UsersCrud {
 	return &UsersCrud{conn: conn, ctx: ctx}
 }
-func (c *UsersCrud) List(limit, offset int) ([]models.User, error) {
+func (c *UsersCrud) List(limit, offset int) ([]dto.User, error) {
 	var users []models.User
 	fmt.Println(limit, offset)
 	q := c.conn.NewSelect().Model(&users).ExcludeColumn("password").OrderExpr("id")
@@ -35,7 +44,11 @@ func (c *UsersCrud) List(limit, offset int) ([]models.User, error) {
 	}
 	err := q.Scan(c.ctx)
 	if err == nil {
-		return users, nil
+		var u []dto.User
+		for _, i := range users {
+			u = append(u, models.UserToDTO(&i))
+		}
+		return u, nil
 	} else {
 		return nil, err
 	}

@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"github.com/ghostforpy/simple_go_app/internals/dto"
 	"github.com/uptrace/bun"
 )
 
@@ -16,4 +17,15 @@ type User struct {
 	CreatedAt   time.Time `bun:",nullzero,notnull,default:current_timestamp" json:"created_at"`
 	IsSuperuser bool      `bun:",notnull,default:false" json:"is_superuser"`
 	IsActive    bool      `bun:",notnull,default:false" json:"is_active"`
+}
+
+func UserToDTO(user *User) dto.User {
+	return dto.User{
+		ID:          user.ID,
+		Name:        user.Name,
+		Email:       user.Email,
+		CreatedAt:   user.CreatedAt,
+		IsSuperuser: user.IsSuperuser,
+		IsActive:    user.IsActive,
+	}
 }
