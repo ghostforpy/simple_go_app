@@ -2,9 +2,11 @@ package handlers
 
 import (
 	//"fmt"
+	"context"
 	"net/http"
-	//"strconv"
+
 	"github.com/gorilla/mux"
+	"github.com/uptrace/bun"
 )
 
 type RootHandler struct {
@@ -23,7 +25,7 @@ func (h *RootHandler) Home(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Привет из Snippetbox"))
 }
 
-func (h *RootHandler) RegisterRoutes(router *mux.Router) {
+func (h *RootHandler) RegisterRoutes(conn *bun.DB, ctx context.Context, router *mux.Router) {
 	router.HandleFunc("/", h.Home)
-	UsersRegisterRoutes("/users", router)
+	UsersRegisterRoutes(conn, ctx, "/users", router)
 }
